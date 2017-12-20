@@ -1,48 +1,49 @@
 
+//#pragma once
+
 #include <SoftwareSerial.h>
 
+#include "L_Pins.hpp"
 #include "L_Shooter.hpp"
+#include "L_Color.hpp"
+
+//#define TX 5
+//#define RX 6
 
 const int minServoAngle = 30;  // servo limit position
 const int maxServoAngle = 180;
 
-// pins
-SoftwareSerial bluetooth(5, 6); // set bluetooth module (TX, RX)
-
-L_Servo* l_servo;
-L_Stepper* l_stepper;
-L_Led* l_led;
-L_Shooter* l_shooter;
+SoftwareSerial bluetooth; // set bluetooth module (TX, RX)
 
 void setup() {
     // led init
-    l_led = new L_Led();
-
-    l_led->indication(l_led->RED);
+    L_Led::attach();
+    L_Led::indication(Color::Red);
     delay(2000);
 
     // init
     /////////////
 
     // init bluetooth module
+    bluetooth(L_Pins::pin_tx, L_Pins::pin_rx);
     bluetooth.begin(9600);
     
     // wait for bluetooth connection
     do {
-        l_led->indication(l_led->NONE);
+        L_Led::indication(Color::None);
         delay(500);
-        l_led->indication(l_led->BLUE);
+        L_Led::indication(Color::Blue);
         delay(500);
     } while(bluetooth.available() > 0 && bluetooth.readString() == "ok");
     delay(500);
     bluetooth.println("Lego 360 connected!");
     
     // servo init
-    l_servo = new L_Servo(minServoAngle, maxServoAngle);
+    L_Servo::attach(minServoAngle, maxServoAngle);
 
     // stepper init
-    l_stepper = new L_Stepper();
-    l_stepper->horizontal_round(10);
+    L_Stepper::attach();
+    L_Stepper::horizontal_round(10);
     delay(200);
 
     // HID keyboard init

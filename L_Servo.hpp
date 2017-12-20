@@ -1,53 +1,55 @@
+
+#pragma once
+
 #include <Servo.h>
 
-Servo servo;
+#include "L_Pins.hpp"
 
 class L_Servo {
 
 private:
-    // pin
-    const int pin = 9;
-    const int stepDelay = 30;
+    static Servo servo;
 
-    int minAngle;
-    int maxAngle;
-    int lastRotate = 0; // 0-up, 1-down
-    int servoPosition;
+    static const int stepDelay_ = 30;
+
+    static int minAngle_;
+    static int maxAngle_;
+    static int lastRotate_ = 0; // 0-up, 1-down
+    static int currentPosition_;
 
 public:
-    L_Servo(int minAngle, int maxAngle) {
-        // servo init
-        this->minAngle = minAngle;
-        this->maxAngle = maxAngle;
-        servoPosition = this->minAngle;
+    static void attach(int minAngle, int maxAngle) {
+        minAngle_ = minAngle;
+        maxAngle_ = maxAngle;
+        currentPosition_ = minAngle_;
         
-        servo.attach(pin);
-        servo.write(servoPosition);
+        servo.attach(L_Pins::pin_servo);
+        servo.write(currentPosition_);
     }
 
-    void vertical_round(int degree) {
-        if (degree > servoPosition) {
-            if (lastRotate == 1)
+    static void vertical_round(int degree) {
+        if (degree > currentPosition_) {
+            if (lastRotate_ == 1)
                 degree += 20;
-            lastRotate = 0;
+            lastRotate_ = 0;
 
-            for (int i = servoPosition; i < servoPosition + degree; i += 1) {
+            for (int i = currentPosition_; i < currentPosition_ + degree; i += 1) {
                 servo.write(i);
-                delay(stepDelay);
+                delay(stepDelay_);
             }
-            servoPosition = servoPosition + degree;
+            currentPosition_ = currentPosition_ + degree;
         }
         else {
-            if (lastRotate == 0)
+            if (lastRotate_ == 0)
                 degree -= 20;
-            lastRotate = 1;
+            lastRotate_ = 1;
 
-            for (int i = servoPosition; i > servoPosition + degree; i -= 1) {
+            for (int i = currentPosition_; i > currentPosition_ + degree; i -= 1) {
                 servo.write(i);
-                delay(stepDelay);
+                delay(stepDelay_);
             }
       
-            servoPosition = servoPosition + degree;
+            currentPosition_ = currentPosition_ + degree;
         }
     }
 };

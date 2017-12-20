@@ -1,46 +1,39 @@
 
+#include "L_Pins.hpp"
+#include "L_Color.hpp"
+
 class L_Led {
   
 private:
-    // pins
-    const int r = 11;
-    const int g = 12;
-    const int b = 3;
 
 public:
-    const int NONE = 0;
-    const int RED = 1;
-    const int GREEN = 2;
-    const int BLUE = 3;
-    const int CYAN = 4;
-
-    L_Led() {
+    static void attach() {
         // led init
-        pinMode(r, OUTPUT);
-        pinMode(g, OUTPUT);
-        pinMode(b, OUTPUT);
+        pinMode(L_Pins::pin_r, OUTPUT);
+        pinMode(L_Pins::pin_g, OUTPUT);
+        pinMode(L_Pins::pin_b, OUTPUT);
     }
 
-    void indication(int color) {
-        digitalWrite(r, LOW);
-        digitalWrite(g, LOW);
-        digitalWrite(b, LOW);
+    static void indication(Color color) {
+        digitalWrite(L_Pins::pin_r, LOW);
+        digitalWrite(L_Pins::pin_g, LOW);
+        digitalWrite(L_Pins::pin_b, LOW);
 
         switch (color) {
-        case 0:
+        case Color::None:
             break;
-        case 1:
-            digitalWrite(r, HIGH);
+        case Color::Red:
+            digitalWrite(L_Pins::pin_r, HIGH);
             break;
-        case 2:
-            digitalWrite(g, HIGH);
+        case Color::Green:
+            digitalWrite(L_Pins::pin_g, HIGH);
             break;
-        case 3:
-            digitalWrite(b, HIGH);
+        case Color::Blue:
+            digitalWrite(L_Pins::pin_b, HIGH);
             break;
-        case 4:
-            digitalWrite(g, HIGH);
-            digitalWrite(b, HIGH);
+        case Color::Cyan:
+            digitalWrite(L_Pins::pin_g, HIGH);
+            digitalWrite(L_Pins::pin_b, HIGH);
             break;
         }
     }
