@@ -1,4 +1,6 @@
 
+#pragma once
+
 #include "L_Pins.hpp"
 #include "L_Color.hpp"
 
@@ -7,14 +9,14 @@ class L_Led {
 private:
 
 public:
-    static void attach() {
+    L_Led() {
         // led init
         pinMode(L_Pins::pin_r, OUTPUT);
         pinMode(L_Pins::pin_g, OUTPUT);
         pinMode(L_Pins::pin_b, OUTPUT);
     }
 
-    static void indication(Color color) {
+    void indication(Color color) {
         digitalWrite(L_Pins::pin_r, LOW);
         digitalWrite(L_Pins::pin_g, LOW);
         digitalWrite(L_Pins::pin_b, LOW);

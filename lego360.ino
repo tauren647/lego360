@@ -1,91 +1,151 @@
 
-//#pragma once
-
 #include <SoftwareSerial.h>
 
 #include "L_Pins.hpp"
-#include "L_Shooter.hpp"
 #include "L_Color.hpp"
-
-//#define TX 5
-//#define RX 6
+#include "L_Shooter.hpp"
 
 const int minServoAngle = 30;  // servo limit position
 const int maxServoAngle = 180;
 
-SoftwareSerial bluetooth; // set bluetooth module (TX, RX)
+// pins
+SoftwareSerial* bluetooth;
+
+L_Servo* l_servo;
+L_Stepper* l_stepper;
+L_Led* l_led;
+L_Shooter* l_shooter;
+
+enum class L_State  {
+    Idle, Running
+};
+
+L_State state = L_State::Idle;
+int photoRemain = 0;
 
 void setup() {
     // led init
-    L_Led::attach();
-    L_Led::indication(Color::Red);
+    l_led = new L_Led();
+
+    l_led->indication(Color::Red);
     delay(2000);
 
     // init
     /////////////
 
     // init bluetooth module
-    bluetooth(L_Pins::pin_tx, L_Pins::pin_rx);
-    bluetooth.begin(9600);
+    bluetooth = new SoftwareSerial(L_Pins::pin_tx, L_Pins::pin_rx); // set bluetooth module (TX, RX)
+    bluetooth->begin(9600);
+    bluetooth->println("/Init BT ok");
     
     // wait for bluetooth connection
-    do {
-        L_Led::indication(Color::None);
-        delay(500);
-        L_Led::indication(Color::Blue);
-        delay(500);
-    } while(bluetooth.available() > 0 && bluetooth.readString() == "ok");
+    String input = "";
+    while(true) {
+        while (!(bluetooth->available() > 0)) {
+            l_led->indication(Color::None);
+            delay(500);
+            l_led->indication(Color::Blue);
+            delay(500);
+        }
+
+        input = readInput();//String(bluetooth->readString());
+        //bluetooth->println("> " + input);
+        if (input == "ok")
+            break;
+    }
+    l_led->indication(Color::None);
     delay(500);
-    bluetooth.println("Lego 360 connected!");
+    bluetooth->println("/Lego 360 connected!");
     
     // servo init
-    L_Servo::attach(minServoAngle, maxServoAngle);
+    l_servo = new L_Servo(minServoAngle, maxServoAngle);
 
     // stepper init
-    L_Stepper::attach();
-    L_Stepper::horizontal_round(10);
+    l_stepper = new L_Stepper();
+    l_stepper->horizontal_round(10);
     delay(200);
 
     // HID keyboard init
     Serial.begin(9600);
     randomSeed(analogRead(0));
     delay(200);
-    
-    bluetooth.println("Initialization done");
-    bluetooth.println("======================");
-    bluetooth.println("Enter mode (360, pano)");
-
-    /*
-    delay(2000);
-    l_led->indication(l_led->NONE);
 
     // start
-    /////////////
-    l_shooter = new L_Shooter(l_servo, l_stepper, l_led, 6, 2);
-    for (int i = 0; i < 6*2; i++)
-        l_shooter->shoot();
+    /////////////    
+    bluetooth->println("/Initialization done");
+    bluetooth->println("/======================");
+    bluetooth->println("Menu");
+    bluetooth->println("-Enter mode (360, pano)");
+    bluetooth->flush();
+}
 
-    l_servo->vertical_round(minServoAngle);
-    */
+String readInput() {
+    char input[32] = "\0";
+    char character;
+    int i = 0;
+    while (bluetooth->available() > 0) {
+        character = bluetooth->read();
+        if (character == '\n' || character == '\r') {
+            input[i] = '\0';
+            break;
+        }
+
+        input[i] = character;
+        i++;
+    }
+
+    bluetooth->flush();
+
+    return input;
 }
 
 void loop() {
-    while (true) {
-        if (bluetooth.available() > 0) {
-            String mode = bluetooth.readString();
+    if (bluetooth->available() > 0) {
+        String mode = readInput();
+        bluetooth->println("> " + mode);
 
-            if (mode == "360") {
-            }
-            else if (mode == "pano") {
-
-            }
-            else {
-                bluetooth.println("Bad command");
-                bluetooth.println("======================");
-                bluetooth.println("Enter mode (360, pano)");
-            }
+        if (state == L_State::Idle && mode == "360") {
+            bluetooth->println("Menu > Mode 360");
+            l_shooter = new L_Shooter(l_servo, l_stepper, l_led, 12, 6);
+            state = L_State::Running;
+            photoRemain = 12*6;
         }
-
-        delay(100);
+        else if (state == L_State::Idle && mode == "pano") {
+            bluetooth->println("Menu > Mode pano");
+            // TODO
+        }
+        else if (mode == "stop") {
+            state = L_State::Idle;
+            bluetooth->println("Menu");
+            bluetooth->println("-Enter mode (360, pano)");
+        }
+        else {
+            bluetooth->println("/Bad command");
+            bluetooth->println("/======================");
+            if (state == L_State::Idle) {
+                bluetooth->println("Menu");
+                bluetooth->println("-Enter mode (360, pano)");
+            }
+            bluetooth->flush();
+        }
+    } else if (state == L_State::Running) {
+        if (photoRemain > 0) {
+            bluetooth->println(l_shooter->shoot());
+            photoRemain--;
+        } else {
+            bluetooth->println("/360 finished");
+            bluetooth->println("/======================");
+            bluetooth->println("Menu");
+            bluetooth->println("-Enter mode (360, pano)");
+            state = L_State::Idle;
+        }
+    } else {
+        l_led->indication(Color::Green);
+        delay(500);
+        l_led->indication(Color::None);
+        delay(400);
     }
+
+    bluetooth->flush();
+    delay(100);
 }

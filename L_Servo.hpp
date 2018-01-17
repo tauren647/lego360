@@ -5,51 +5,52 @@
 
 #include "L_Pins.hpp"
 
+Servo servo;
+
 class L_Servo {
 
 private:
-    static Servo servo;
+    const int stepDelay = 30;
 
-    static const int stepDelay_ = 30;
-
-    static int minAngle_;
-    static int maxAngle_;
-    static int lastRotate_ = 0; // 0-up, 1-down
-    static int currentPosition_;
+    int minAngle;
+    int maxAngle;
+    int lastRotate = 0; // 0-up, 1-down
+    int servoPosition;
 
 public:
-    static void attach(int minAngle, int maxAngle) {
-        minAngle_ = minAngle;
-        maxAngle_ = maxAngle;
-        currentPosition_ = minAngle_;
+    L_Servo(int minAngle, int maxAngle) {
+        // servo init
+        this->minAngle = minAngle;
+        this->maxAngle = maxAngle;
+        servoPosition = this->minAngle;
         
         servo.attach(L_Pins::pin_servo);
-        servo.write(currentPosition_);
+        servo.write(servoPosition);
     }
 
-    static void vertical_round(int degree) {
-        if (degree > currentPosition_) {
-            if (lastRotate_ == 1)
+    void vertical_round(int degree) {
+        if (degree > servoPosition) {
+            if (lastRotate == 1)
                 degree += 20;
-            lastRotate_ = 0;
+            lastRotate = 0;
 
-            for (int i = currentPosition_; i < currentPosition_ + degree; i += 1) {
+            for (int i = servoPosition; i < servoPosition + degree; i += 1) {
                 servo.write(i);
-                delay(stepDelay_);
+                delay(stepDelay);
             }
-            currentPosition_ = currentPosition_ + degree;
+            servoPosition = servoPosition + degree;
         }
         else {
-            if (lastRotate_ == 0)
+            if (lastRotate == 0)
                 degree -= 20;
-            lastRotate_ = 1;
+            lastRotate = 1;
 
-            for (int i = currentPosition_; i > currentPosition_ + degree; i -= 1) {
+            for (int i = servoPosition; i > servoPosition + degree; i -= 1) {
                 servo.write(i);
-                delay(stepDelay_);
+                delay(stepDelay);
             }
       
-            currentPosition_ = currentPosition_ + degree;
+            servoPosition = servoPosition + degree;
         }
     }
 };

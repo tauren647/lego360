@@ -1,7 +1,6 @@
 
 #pragma once
 
-#include "L_Pins.hpp"
 #include "L_Servo.hpp"
 #include "L_Stepper.hpp"
 #include "L_Led.hpp"
@@ -12,13 +11,17 @@ private:
 	const int volumeUpCode = 0x80;    // vol up keyboard code
 	uint8_t buf[8] = { 0 };   // keyboard report buffer
 
-	const int minServoAngle_ = 30;  // servo limit position
-	const int maxServoAngle_ = 180;
+	L_Servo* l_servo;
+	L_Stepper* l_stepper;
+	L_Led* l_led;
+
+	const int minServoAngle = 30;  // servo limit position
+	const int maxServoAngle = 180;
 
 	// TODO maxServoAngle vMaxAngle ????
 
-	int hCount_; // count of photos
-	int vCount_;
+	int hCount; // count of photos
+	int vCount;
 
 	int hAngle = -1; // photographed angle for panorama mode
 	int vMinAngle;
@@ -40,15 +43,28 @@ private:
 	}
 
 public:
-	L_Shooter(int hCount, int vCount)
-			: hCount_(hCount), vCount_(vCount) {
+	L_Shooter(L_Servo* ser, L_Stepper* step, L_Led* led, int hCount, int vCount) {
+		l_servo = ser;
+		l_stepper = step;
+		l_led = led;
+
+		this->hCount = hCount;
+		this->vCount = vCount;
 
 		hDiff = 360 / hCount;
-		vDiff = (maxServoAngle_ - minServoAngle_) / (vCount - 1); // -1 bacause 90 and 2 photos = 1*90 deg
+		vDiff = (maxServoAngle - minServoAngle) / (vCount - 1); // -1 bacause 90 and 2 photos = 1*90 deg
 	}
 
-	L_Shooter(int hCount, int vCount, int hAngle, int vMinAngle, int vMaxAnlge)
-			: L_Shooter(hCount, vCount), hAngle(hAngle), vMinAngle(vMinAngle), vMaxAngle(vMaxAnlge) {
+	L_Shooter(L_Servo* ser, L_Stepper* step, L_Led* led, int hCount, int vCount, int hAngle, int vMinAngle, int vMaxAnlge) {
+		l_servo = ser;
+		l_stepper = step;
+		l_led = led;
+
+		this->hCount = hCount;
+		this->vCount = vCount;
+		this->hAngle = hAngle;
+		this->vMinAngle = vMinAngle;
+		this->vMaxAngle = vMaxAngle;
 
 		hDiff = hAngle / (hCount - 1);
 		vDiff = (vMaxAngle - vMinAngle) / (vCount - 1);
@@ -59,32 +75,31 @@ public:
 		send_key(); // take a photo
 		delay(4000);
 
-		if (vDone == vCount_ || (vDone == 0 && hCount_ % 2 != 0)) {
+		if (vDone == vCount || (vDone == 0 && hCount % 2 != 0)) {
 			// horizontal rotate
-			l_stepper_.horizontal_round(hDiff);
+			l_stepper->horizontal_round(hDiff);
 			hDone += 1;
 			vDone = 0;
 			
 		}
-		else {
-			// vertical rotate
-			if (hDone % 2 == 0) {
-				// vertical rotate UP
-				l_servo_.vertical_round(vDiff * vDone);
-				
-			}
-			else
-				// vertical rotate DOWN
-				l_servo_.vertical_round(maxServoAngle_ - (vDiff * vDone));
-
-			vDone += 1;
+		
+		// vertical rotate
+		if (hDone % 2 == 0) {
+			// vertical rotate UP
+			l_servo->vertical_round(vDiff * vDone);
+			
 		}
+		else
+			// vertical rotate DOWN
+			l_servo->vertical_round(maxServoAngle - (vDiff * vDone));
+
+		vDone += 1;
 
 		String output = "";
 		for (int i = 0; i < hDone; i++)
 			output += "#";
 		output += vDone;
-		for (int i = 0; i < (hCount_-hDone-1); i++)
+		for (int i = 0; i < (hCount-hDone-1); i++)
 			output += "_";
 
 		return output;

@@ -14,6 +14,6 @@ public:
 
     static const int pin_step1 = 2;
     static const int pin_step2 = 4;
-    static const int pin_step3 = 8;
-    static const int pin_step4 = 7;
+    static const int pin_step3 = 7;
+    static const int pin_step4 = 8;
 };
